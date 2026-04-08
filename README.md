@@ -18,6 +18,21 @@ MIL-ton is a production-quality Python pipeline that takes single-cell RNA-seq d
 
 ## Installation
 
+### With `uv` (recommended)
+
+```bash
+# Install uv if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install the package and its dependencies
+uv sync
+
+# Or install with dev dependencies
+uv sync --extra dev
+```
+
+### With pip
+
 ```bash
 pip install -e ".[dev]"
 ```
