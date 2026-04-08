@@ -191,14 +191,14 @@ class Trainer:
             self.optimizer.zero_grad()
 
             # Process bag by bag (MIL is per-donor)
-            batch_loss = torch.tensor(0.0, device=self.device)
             batch_size = X_batch.shape[0]
+            bag_losses = []
             for i in range(batch_size):
                 logits, _ = self.model(X_batch[i])
                 loss = self._compute_loss(logits.unsqueeze(0), y_batch[i].unsqueeze(0))
-                batch_loss = batch_loss + loss
+                bag_losses.append(loss)
 
-            batch_loss = batch_loss / batch_size
+            batch_loss = torch.stack(bag_losses).mean()
             batch_loss.backward()
             self.optimizer.step()
 
