@@ -56,7 +56,17 @@ class DonorDataset(Dataset):
         for donor_id, group in adata.obs.groupby(donor_col):
             indices = [self.obs_index_map[bc] for bc in group.index]
             self.donor_indices[str(donor_id)] = indices
-            label_vals = group[label_cols].iloc[0].values.astype(float)
+            donor_labels = group[label_cols]
+            # Warn if labels are not constant across cells for this donor
+            if donor_labels.nunique().max() > 1:
+                import warnings
+                warnings.warn(
+                    f"Donor '{donor_id}' has inconsistent labels across cells "
+                    f"for columns {label_cols}. Using the first row.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            label_vals = donor_labels.iloc[0].values.astype(float)
             self.donors.append(str(donor_id))
             self.labels.append(label_vals)
 

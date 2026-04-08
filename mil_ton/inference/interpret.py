@@ -158,18 +158,33 @@ def export_top_attended_cells(
         mask = adata.obs[donor_col] == donor_id
         donor_barcodes = list(adata.obs_names[mask])
 
-        # attn aligns with the *sampled* cells, which may be fewer than all
-        # donor cells.  We report based on the attention array length.
-        top_k = min(n_top, len(attn))
-        top_indices_local = np.argsort(attn)[::-1][:top_k]
+        # attn was computed on *sampled* cells; its length is cells_per_donor,
+        # which may differ from the total donor cell count.  We can only map
+        # attention back to specific barcodes up to the overlap length.
+        n_mappable = min(len(attn), len(donor_barcodes))
+        if n_mappable == 0:
+            continue
+        if len(attn) != len(donor_barcodes):
+            logger.debug(
+                "Donor %s: attention length (%d) != donor cell count (%d); "
+                "mapping to first %d cells only.",
+                donor_id,
+                len(attn),
+                len(donor_barcodes),
+                n_mappable,
+            )
+
+        # Rank within the mappable range and take the top-k
+        mappable_attn = attn[:n_mappable]
+        top_k = min(n_top, n_mappable)
+        top_indices_local = np.argsort(mappable_attn)[::-1][:top_k]
 
         for local_idx in top_indices_local:
-            if local_idx < len(donor_barcodes):
-                bc = donor_barcodes[local_idx]
-                global_idx = obs_index_map[bc]
-                row = {"donor_id": donor_id, "cell_barcode": bc, "attention_weight": attn[local_idx]}
-                row.update(adata.obs.iloc[global_idx].to_dict())
-                rows.append(row)
+            bc = donor_barcodes[local_idx]
+            global_idx = obs_index_map[bc]
+            row = {"donor_id": donor_id, "cell_barcode": bc, "attention_weight": float(mappable_attn[local_idx])}
+            row.update(adata.obs.iloc[global_idx].to_dict())
+            rows.append(row)
 
     df = pd.DataFrame(rows)
 
