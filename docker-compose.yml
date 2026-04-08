@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  mil-predict:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./configs:/app/configs
+    command: >
+      --input-dir /app/data
+      --donor-col donor_id
+      --label-cols disease_status
+      --task classification
+      --output-dir /app/results

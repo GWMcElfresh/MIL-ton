@@ -1,0 +1,27 @@
+data:
+  donor_col: donor_id
+  label_cols:
+    - disease_status
+  task: classification
+  cells_per_donor: 5000
+  min_cells: 50
+
+scvi:
+  n_latent: 30
+  max_epochs: 400
+  early_stopping: true
+
+mil:
+  encoder_dims: [256, 128]
+  attention_dim: 64
+  dropout: 0.2
+  n_heads: 1
+
+training:
+  batch_size: 16
+  lr: 0.001
+  epochs: 100
+  weight_decay: 0.0001
+  train_frac: 0.7
+  val_frac: 0.15
+  seed: 42
