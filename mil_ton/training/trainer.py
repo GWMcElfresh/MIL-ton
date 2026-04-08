@@ -58,7 +58,7 @@ class Trainer:
         )
         self.model.to(self.device)
 
-        self.optimiser = torch.optim.Adam(
+        self.optimizer = torch.optim.Adam(
             model.parameters(), lr=config.lr, weight_decay=config.weight_decay
         )
         self.loss_fn = self._build_loss()
@@ -188,7 +188,7 @@ class Trainer:
             X_batch = X_batch.to(self.device)
             y_batch = y_batch.to(self.device)
 
-            self.optimiser.zero_grad()
+            self.optimizer.zero_grad()
 
             # Process bag by bag (MIL is per-donor)
             batch_loss = torch.tensor(0.0, device=self.device)
@@ -200,7 +200,7 @@ class Trainer:
 
             batch_loss = batch_loss / batch_size
             batch_loss.backward()
-            self.optimiser.step()
+            self.optimizer.step()
 
             total_loss += batch_loss.item()
             n_bags += 1

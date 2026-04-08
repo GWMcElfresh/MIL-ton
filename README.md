@@ -118,4 +118,3 @@ pytest tests/ -v
 ## License
 
 See [LICENSE](LICENSE).
-10x MIL classification pipeline
