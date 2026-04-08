@@ -10,6 +10,6 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY mil_ton/ mil_ton/
 
-RUN uv sync --no-dev
+RUN uv pip install --system --no-cache .
 
 ENTRYPOINT ["uv", "run", "mil-predict"]
