@@ -244,7 +244,7 @@ class Trainer:
         for name, metric in metrics.items():
             try:
                 result[name] = metric.compute().item()
-            except Exception as exc:  # noqa: BLE001
+            except (RuntimeError, ValueError) as exc:
                 logger.warning("Could not compute metric '%s': %s", name, exc)
                 result[name] = float("nan")
         return result

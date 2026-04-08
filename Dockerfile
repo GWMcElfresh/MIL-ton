@@ -12,4 +12,4 @@ COPY mil_ton/ mil_ton/
 
 RUN uv pip install --system --no-cache .
 
-ENTRYPOINT ["uv", "run", "mil-predict"]
+ENTRYPOINT ["mil-predict"]

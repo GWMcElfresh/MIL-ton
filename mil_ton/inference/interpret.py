@@ -99,10 +99,11 @@ def map_attention_to_adata(
             # Assign to sampled positions; accumulate and average if overlapping
             counts = np.zeros(len(donor_indices), dtype=float)
             acc = np.zeros(len(donor_indices), dtype=float)
+            sampled_set = set(sampled)
             sampled_local = {
                 idx: j
                 for j, idx in enumerate(donor_indices)
-                if idx in {s for s in sampled}
+                if idx in sampled_set
             }
             for k, s_idx in enumerate(sampled):
                 if s_idx in sampled_local:

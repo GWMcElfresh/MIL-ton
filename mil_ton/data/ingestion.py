@@ -58,7 +58,7 @@ def load_data(
         logger.info("Loading 10x HDF5 file: %s", gex_path)
         try:
             adata = sc.read_10x_h5(str(gex_path))
-        except Exception as exc:  # pragma: no cover
+        except (OSError, ValueError, KeyError) as exc:  # pragma: no cover
             logger.warning("sc.read_10x_h5 failed (%s); trying read_h5ad", exc)
             adata = ad.read_h5ad(str(gex_path))
     else:
