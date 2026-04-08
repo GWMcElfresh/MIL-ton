@@ -183,7 +183,7 @@ def run(
     # 7. Test evaluation                                                   #
     # ------------------------------------------------------------------ #
     # Load best model
-    model.load_state_dict(torch.load(output_dir / "model.pt", map_location="cpu"))
+    model.load_state_dict(torch.load(output_dir / "model.pt", map_location=trainer.device))
     test_metrics = trainer.evaluate(test_loader)
     logger.info("Test metrics: %s", test_metrics)
 

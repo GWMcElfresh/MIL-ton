@@ -190,19 +190,19 @@ class Trainer:
 
             self.optimizer.zero_grad()
 
-            # Process bag by bag (MIL is per-donor)
+            # Process each bag individually and accumulate gradients.
+            # This avoids holding all bag computation graphs in memory at once.
             batch_size = X_batch.shape[0]
-            bag_losses = []
+            batch_total_loss = 0.0
             for i in range(batch_size):
                 logits, _ = self.model(X_batch[i])
                 loss = self._compute_loss(logits.unsqueeze(0), y_batch[i].unsqueeze(0))
-                bag_losses.append(loss)
+                # Scale loss so the overall gradient equals the mean across bags
+                (loss / batch_size).backward()
+                batch_total_loss += loss.item()
 
-            batch_loss = torch.stack(bag_losses).mean()
-            batch_loss.backward()
             self.optimizer.step()
-
-            total_loss += batch_loss.item()
+            total_loss += batch_total_loss / batch_size
             n_bags += 1
 
         return total_loss / max(n_bags, 1)

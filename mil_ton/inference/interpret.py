@@ -153,33 +153,52 @@ def export_top_attended_cells(
         mask = adata.obs[donor_col] == donor_id
         donor_barcodes = list(adata.obs_names[mask])
 
-        # attn was computed on *sampled* cells; its length is cells_per_donor,
-        # which may differ from the total donor cell count.  We can only map
-        # attention back to specific barcodes up to the overlap length.
-        n_mappable = min(len(attn), len(donor_barcodes))
-        if n_mappable == 0:
+        if len(donor_barcodes) == 0:
             continue
-        if len(attn) != len(donor_barcodes):
+
+        # Attention weights are computed over *randomly sampled* cells whose
+        # exact identities are not stored here.  We therefore report the mean
+        # attention score for the donor and list all donor cells ranked by that
+        # scalar.  For cell-level interpretation, pass ``cell_sample_indices``
+        # to :func:`map_attention_to_adata` and annotate ``adata.obs`` before
+        # calling this function.
+        if len(attn) == len(donor_barcodes):
+            # Exact 1-to-1 mapping is possible (e.g. when cells_per_donor ≥
+            # total donor cell count so all cells were included).
+            top_k = min(n_top, len(donor_barcodes))
+            top_local = np.argsort(attn)[::-1][:top_k]
+            for local_idx in top_local:
+                bc = donor_barcodes[local_idx]
+                global_idx = obs_index_map[bc]
+                row = {
+                    "donor_id": donor_id,
+                    "cell_barcode": bc,
+                    "attention_weight": float(attn[local_idx]),
+                }
+                row.update(adata.obs.iloc[global_idx].to_dict())
+                rows.append(row)
+        else:
+            # Sampled bag size differs from donor cell count; use mean attention
+            # as a donor-level score and list top-N cells (ordered by original
+            # index as a stable tie-breaker).
+            mean_attn = float(np.mean(attn))
             logger.debug(
-                "Donor %s: attention length (%d) != donor cell count (%d); "
-                "mapping to first %d cells only.",
+                "Donor %s: attention vector length (%d) != donor cell count (%d); "
+                "reporting mean attention score for all cells.",
                 donor_id,
                 len(attn),
                 len(donor_barcodes),
-                n_mappable,
             )
-
-        # Rank within the mappable range and take the top-k
-        mappable_attn = attn[:n_mappable]
-        top_k = min(n_top, n_mappable)
-        top_indices_local = np.argsort(mappable_attn)[::-1][:top_k]
-
-        for local_idx in top_indices_local:
-            bc = donor_barcodes[local_idx]
-            global_idx = obs_index_map[bc]
-            row = {"donor_id": donor_id, "cell_barcode": bc, "attention_weight": float(mappable_attn[local_idx])}
-            row.update(adata.obs.iloc[global_idx].to_dict())
-            rows.append(row)
+            top_k = min(n_top, len(donor_barcodes))
+            for bc in donor_barcodes[:top_k]:
+                global_idx = obs_index_map[bc]
+                row = {
+                    "donor_id": donor_id,
+                    "cell_barcode": bc,
+                    "attention_weight": mean_attn,
+                }
+                row.update(adata.obs.iloc[global_idx].to_dict())
+                rows.append(row)
 
     df = pd.DataFrame(rows)
 
