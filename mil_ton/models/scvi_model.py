@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import scvi as _scvi_lib
-except ImportError:
+except (ImportError, AttributeError):
     _scvi_lib = None  # type: ignore[assignment]
 
 
