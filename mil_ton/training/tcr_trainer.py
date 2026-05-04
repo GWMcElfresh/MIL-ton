@@ -59,7 +59,11 @@ class TCRTrainer:
         self.optimizer = torch.optim.Adam(
             model.parameters(), lr=lr, weight_decay=weight_decay
         )
-        self.loss_fn = nn.CrossEntropyLoss()
+        # BCELoss is correct here because the model outputs per-class sigmoid
+        # probabilities (not raw logits).  CrossEntropyLoss internally applies
+        # log_softmax and therefore expects unnormalised logits; feeding it
+        # post-sigmoid values produces incorrect gradients.
+        self.loss_fn = nn.BCELoss()
         self._best_val_auc = 0.0
 
     # ------------------------------------------------------------------
@@ -76,7 +80,17 @@ class TCRTrainer:
             probs = probs.unsqueeze(0)
         if y.dim() == 0:
             y = y.unsqueeze(0)
-        loss = self.loss_fn(probs, y)
+
+        # BCELoss requires targets with the same shape as probs.  Convert
+        # integer class indices to one-hot float vectors so that each output
+        # neuron (sigmoid probability) is compared against a 0/1 target.
+        n_classes = probs.shape[-1]
+        y_onehot = torch.zeros(
+            (y.shape[0], n_classes), device=probs.device, dtype=probs.dtype
+        )
+        y_onehot.scatter_(1, y.long().unsqueeze(1), 1.0)
+
+        loss = self.loss_fn(probs, y_onehot)
         return loss, probs, pre_mil
 
     # ------------------------------------------------------------------

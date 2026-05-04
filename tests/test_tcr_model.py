@@ -296,9 +296,11 @@ class TestTCRBagDataset:
 # ── TCRTrainer / evaluate_berttcr ────────────────────────────────────────────
 
 class TestTCRTrainer:
-    def _make_loader(self, n_bags: int = 4, batch: int = 2) -> DataLoader:
+    def _make_loader(self, n_bags: int = 4, batch: int = 2, n_classes: int = N_CLASSES) -> DataLoader:
         X = torch.randn(n_bags, N_TCRS, BERT_HIDDEN, MAX_LEN)
-        y = torch.randint(0, N_CLASSES, (n_bags,))
+        # Cycle through class indices so every class is always represented,
+        # preventing NaN AUC from single-class batches and flaky checkpoint tests.
+        y = torch.tensor([i % n_classes for i in range(n_bags)])
         return DataLoader(TensorDataset(X, y), batch_size=batch, shuffle=False)
 
     def test_evaluate_returns_keys(self):
@@ -352,3 +354,18 @@ class TestTCRTrainer:
             loader = self._make_loader()
             history = train_berttcr(model, loader, loader, epochs=1, output_dir=tmpdir)
         assert history["train_loss"]
+
+    def test_train_multiclass(self):
+        """TCRTrainer.train() handles more than 2 classes (3-class classification)."""
+        from mil_ton.training.tcr_trainer import TCRTrainer
+        n_classes = 3
+        n_bags = 6  # exactly 2 bags per class
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model = _make_model(n_classes=n_classes)
+            model.train()
+            loader = self._make_loader(n_bags=n_bags, batch=3, n_classes=n_classes)
+            trainer = TCRTrainer(model, epochs=1, output_dir=tmpdir)
+            history = trainer.train(loader, loader)
+        assert "train_loss" in history
+        assert len(history["train_loss"]) == 1
+        assert "val_accuracy" in history
