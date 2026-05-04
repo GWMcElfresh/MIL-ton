@@ -113,6 +113,111 @@ ds = DonorDataset(adata, donor_col="donor_id", label_cols=["disease_status"],
 
 ---
 
+## TCR submodule (BertTCR)
+
+MIL-ton includes an implementation of the **BertTCR** model
+([Zhang et al. 2024, *Brief Bioinform*](https://doi.org/10.1093/bib/bbae420),
+[github.com/zhangbeibei-min/BertTCR](https://github.com/zhangbeibei-min/BertTCR))
+for T-cell receptor repertoire classification.
+
+### Architecture
+
+```
+TCR sequences (amino acids)
+        │
+        ▼  TCRBertEncoder  (transformers ProtBERT or equivalent)
+(n_tcrs, hidden_size, max_tcr_len)   ← variable-length sequences
+        │                              are padded/truncated here
+        ▼  Parallel 1-D CNNs
+(n_tcrs, sum_filters, 1)
+        │
+        ▼  Shared FC layer
+(n_tcrs,)   ← per-TCR scalar score  ← pre-MIL embedding returned by API
+        │
+        ▼  MIL ensemble (5 × linear heads, averaged)
+(n_classes,)  class probabilities
+```
+
+**Variable-length TCR handling** – BertTCR normalises variable CDR3 length
+in two stages:
+
+1. Sequences longer than `max_tcr_len` are **truncated** before BERT
+   tokenisation.
+2. After encoding, the position dimension is **zero-padded** (or
+   truncated) to exactly `max_tcr_len`.  This mirrors the `BERT_embedding.py`
+   pre-processing in the original repo.
+
+### Usage
+
+#### From pre-computed BERT embeddings (`.pth` files)
+
+```python
+from torch.utils.data import DataLoader
+from mil_ton.models.tcr import BertTCRModel, TCRBagDataset
+from mil_ton.training.tcr_trainer import train_berttcr, evaluate_berttcr
+
+# Dataset: each .pth file = one repertoire bag
+# Filenames must contain flag_positive or flag_negative
+train_ds = TCRBagDataset("TrainingData/", flag_positive="Patient", flag_negative="Health")
+val_ds   = TCRBagDataset("ValidationData/")
+
+train_loader = DataLoader(train_ds, batch_size=8, shuffle=True)
+val_loader   = DataLoader(val_ds,   batch_size=8)
+
+# Instantiate model – set bert_hidden_size to match your BERT backbone
+model = BertTCRModel(
+    n_tcrs=100,            # TCRs per repertoire bag
+    n_classes=2,
+    bert_hidden_size=768,  # 768 for tape bert-base, 1024 for Rostlab/prot_bert_bfd
+)
+
+# Train
+history = train_berttcr(model, train_loader, val_loader, epochs=50)
+
+# Evaluate – returns loss, accuracy, auc AND pre-MIL embeddings
+metrics = evaluate_berttcr(model, val_loader)
+print(metrics["auc"])
+print(metrics["pre_mil_embeddings"])  # list of (batch, n_tcrs) tensors
+```
+
+#### Forward pass – getting both outputs
+
+```python
+import torch
+
+# x: (batch, n_tcrs, bert_hidden_size, max_tcr_len)
+x = torch.randn(4, 100, 768, 24)
+probs, pre_mil = model(x)
+# probs:   (4, 2)   – class probabilities after sigmoid
+# pre_mil: (4, 100) – per-TCR scalar score before MIL ensemble
+```
+
+#### Encoding raw TCR sequences
+
+```python
+from mil_ton.models.tcr import TCRBertEncoder
+
+encoder = TCRBertEncoder(
+    model_name="Rostlab/prot_bert_bfd",  # any HuggingFace protein LM
+    max_tcr_len=24,
+)
+embeddings = encoder.encode(["CASSLDRGTEAFF", "CASGDSSGANVLTF", "CASSQETQYF"])
+# shape: (3, 1024, 24)  – ready to feed into BertTCRModel(bert_hidden_size=1024)
+```
+
+### Pre-MIL embeddings
+
+Both `model.forward()` and `evaluate_berttcr()` expose the per-TCR scalar
+scores **before** the MIL ensemble classification step.  These
+`pre_mil` tensors of shape `(batch, n_tcrs)` capture the CNN-derived
+"relevance" of each TCR in the bag and are useful for:
+
+* downstream repertoire analysis and clustering,
+* transfer learning / fine-tuning on new cancer types,
+* interpretability (which TCRs drive the bag-level prediction?).
+
+---
+
 ## Docker
 
 ```bash

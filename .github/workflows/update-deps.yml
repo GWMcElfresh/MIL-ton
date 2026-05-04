@@ -1,0 +1,32 @@
+name: Update Dependency Cache
+
+# Rebuilds the monthly base Docker image whenever dependencies change or on a
+# fixed monthly schedule.  The resulting image is pushed to GHCR and reused by
+# the CI test workflow, keeping test runs fast.
+#
+# Calls the shared workflow from:
+#   https://github.com/GWMcElfresh/dockerDependencies
+
+on:
+  # Rebuild automatically when any dependency spec changes on main.
+  push:
+    branches: [main]
+    paths:
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'Dockerfile'
+
+  # Rebuild on the 1st of every month to pick up upstream security patches.
+  schedule:
+    - cron: '0 2 1 * *'
+
+  # Allow a manual trigger (e.g. after a major dep bump on a feature branch).
+  workflow_dispatch:
+
+jobs:
+  build-base:
+    uses: GWMcElfresh/dockerDependencies/.github/workflows/build-base-image.yml@main
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
