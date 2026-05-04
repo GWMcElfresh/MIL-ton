@@ -50,3 +50,33 @@ def test_split_donors():
     assert len(train) >= 1
     assert len(val) >= 1
     assert len(test) >= 1
+
+
+def test_donor_dataset_replacement_sampling(synthetic_adata):
+    """When cells_per_donor exceeds available cells, sampling with replacement should
+    still return the requested number of cells."""
+    # Each donor has ~50 cells (200 cells / 4 donors); request more than that.
+    ds = DonorDataset(
+        synthetic_adata,
+        donor_col="donor_id",
+        label_cols=["disease_status"],
+        cells_per_donor=60,
+        task="classification",
+        seed=0,
+    )
+    X, y = ds[0]
+    assert X.shape == (60, 30), f"Expected (60, 30), got {X.shape}"
+
+
+def test_donor_dataset_regression_dtype(synthetic_adata):
+    """Regression task should return float32 labels."""
+    ds = DonorDataset(
+        synthetic_adata,
+        donor_col="donor_id",
+        label_cols=["disease_status"],
+        cells_per_donor=20,
+        task="regression",
+        seed=0,
+    )
+    _, y = ds[0]
+    assert y.dtype == torch.float32, f"Expected float32, got {y.dtype}"
