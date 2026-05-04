@@ -10,9 +10,6 @@ from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torchmetrics import MeanSquaredError, R2Score
-from torchmetrics.classification import AUROC, Accuracy
-
 from mil_ton.config import TrainingConfig
 
 logger = logging.getLogger(__name__)
@@ -77,6 +74,9 @@ class Trainer:
 
     def _build_metrics(self):
         """Build torchmetrics metric objects for the current task."""
+        from torchmetrics import MeanSquaredError, R2Score
+        from torchmetrics.classification import AUROC, Accuracy
+
         if self.task == "regression":
             return {
                 "rmse": MeanSquaredError(squared=False).to(self.device),
