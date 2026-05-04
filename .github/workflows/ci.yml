@@ -30,6 +30,9 @@ jobs:
     with:
       python-version: '3.12'
       use-base-image: true
+      # The shared cache key does not hash Dockerfile by default, so include it
+      # explicitly to avoid reusing stale deps images after install-logic changes.
+      dependency-files: Dockerfile
       # Install the package (deps already in the image) and run pytest.
       # When the runtime image is not built, the shared workflow mounts the
       # current workspace into the deps container so tests/ and mil_ton/ are

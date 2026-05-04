@@ -2,7 +2,8 @@
 # Installs all Python dependencies (runtime + dev) without the package source.
 # This layer is cached monthly by the dockerDependencies shared workflow so that
 # CI builds are fast – only source-code changes ever need a rebuild.
-FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime AS deps
+ARG BASE_IMAGE=pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+FROM ${BASE_IMAGE} AS deps
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
