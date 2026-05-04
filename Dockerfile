@@ -12,7 +12,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 
 # Copy only the dependency spec files so that source changes don't bust the cache.
-COPY pyproject.toml uv.lock ./
+# LICENSE is required because pyproject.toml declares `license = { file = "LICENSE" }`
+# and hatchling reads it when building the package metadata during `uv pip install`.
+COPY pyproject.toml uv.lock LICENSE ./
 
 # Create a minimal package stub so uv can resolve the package metadata without
 # needing the real source tree, then install all dependencies (runtime + dev),
