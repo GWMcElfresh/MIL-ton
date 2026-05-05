@@ -22,4 +22,3 @@ results/
 outputs/
 *.pt
 *.pkl
-uv.lock

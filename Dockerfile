@@ -32,8 +32,7 @@ RUN mkdir -p mil_ton \
 FROM deps AS runtime
 
 COPY mil_ton/ mil_ton/
+COPY tests/ tests/
 
 # Install the package itself without reinstalling its dependencies (already present).
 RUN uv pip install --system --no-cache --no-deps .
-
-ENTRYPOINT ["mil-predict"]
