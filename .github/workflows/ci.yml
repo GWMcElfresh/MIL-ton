@@ -1,0 +1,50 @@
+name: CI
+
+# Runs the full test suite inside the cached Docker image on every push and
+# pull request.  The dependency image is either pulled from GHCR (fast path)
+# or rebuilt from the Dockerfile deps stage (slow path on cache miss).
+#
+# Calls the shared workflows from:
+#   https://github.com/GWMcElfresh/dockerDependencies
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Ensure the monthly base image exists before the test job tries to use it.
+  build-base:
+    uses: GWMcElfresh/dockerDependencies/.github/workflows/build-base-image.yml@main
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+
+  # Build on top of the deps image, mount the workspace, and run pytest inside it.
+  test:
+    needs: build-base
+    if: ${{ !cancelled() }}  # Run when build-base succeeds or is skipped, but not when cancelled
+    uses: GWMcElfresh/dockerDependencies/.github/workflows/docker-cache.yml@main
+    with:
+      python-version: '3.12'
+      use-base-image: true
+      # The shared cache key does not hash Dockerfile by default, so include it
+      # explicitly to avoid reusing stale deps images after install-logic changes.
+      dependency-files: Dockerfile
+      # Install the package (deps already in the image) and run pytest.
+      # When the runtime image is not built, the shared workflow mounts the
+      # current workspace into the deps container so tests/ and mil_ton/ are
+      # both available at /workspace.
+      test-command: >-
+        uv pip install --system --no-deps . &&
+        python -m pytest tests/ -v
+      # Push the refreshed deps image to GHCR on every run; push the runtime
+      # image only when merging to main.
+      push-images: true
+      push-runtime: ${{ github.ref == 'refs/heads/main' }}
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit

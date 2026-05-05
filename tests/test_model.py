@@ -73,3 +73,22 @@ def test_mil_model_multiclass():
     logits, attn = model(x)
     assert logits.shape == (3,), f"Expected (3,), got {logits.shape}"
     assert attn.shape == (20,), f"Expected (20,), got {attn.shape}"
+
+
+def test_mil_model_batched_forward():
+    """MILModel should handle batched (B, n_cells, input_dim) input."""
+    batch_size = 3
+    model = MILModel(
+        input_dim=30,
+        encoder_dims=[16, 8],
+        attention_dim=8,
+        n_classes=1,
+        task="classification",
+        dropout=0.0,
+        n_heads=1,
+    )
+    model.eval()
+    x = torch.randn(batch_size, 20, 30)
+    logits, attn = model(x)
+    assert logits.shape == (batch_size, 1), f"Expected ({batch_size}, 1), got {logits.shape}"
+    assert attn.shape == (batch_size, 20), f"Expected ({batch_size}, 20), got {attn.shape}"
