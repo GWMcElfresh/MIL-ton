@@ -11,7 +11,7 @@ MIL-ton is a production-quality Python pipeline that takes single-cell RNA-seq d
 - **scVI integration** – learns a batch-corrected latent space from raw counts
 - **Attention MIL** – aggregates per-cell embeddings into a donor-level representation with interpretable attention weights
 - **Multi-task** – supports binary/multi-class classification and regression
-- **CLI** – single `mil-predict run` command drives the entire pipeline
+- **CLI** – single `mil-predict` command drives the entire pipeline
 - **Interpretability** – exports per-cell attention weights for downstream analysis
 
 ---
@@ -44,8 +44,7 @@ Requires Python ≥ 3.10.
 ## Quick start
 
 ```bash
-mil-predict run \
-  --input-dir ./data \
+mil-predict ./data \
   --donor-col donor_id \
   --label-cols disease_status \
   --task classification \
@@ -55,8 +54,7 @@ mil-predict run \
 ### Using a config file
 
 ```bash
-mil-predict run \
-  --input-dir ./data \
+mil-predict ./data \
   --donor-col donor_id \
   --label-cols disease_status \
   --config configs/example.yaml \
