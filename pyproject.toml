@@ -27,7 +27,7 @@ dependencies = [
     "torchmetrics>=1.0,<2.0",
     # BertTCR TCR submodule: BERT-based protein language model for TCR encoding.
     # See mil_ton/models/tcr/ and https://github.com/zhangbeibei-min/BertTCR
-    "transformers>=4.30,<5.0",
+    "transformers>=4.30,<4.45",
 ]
 
 [project.optional-dependencies]
