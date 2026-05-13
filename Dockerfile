@@ -11,16 +11,23 @@ ENV TZ=UTC
 
 # Install R 4.4 via rig (R Installation Manager) — avoids apt dependency hell
 # on the minimal pytorch base image. Rig bundles pre-compiled binaries.
-RUN curl -fsSL https://github.com/r-lib/rig/releases/download/latest/rig-linux-$(dpkg --print-architecture).tar.gz \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fsSL https://github.com/r-lib/rig/releases/download/latest/rig-linux-$(dpkg --print-architecture).tar.gz \
     | tar xz -C /usr/local \
     && rig add 4.4 --quiet \
     && rig default 4.4
 
-# System deps for R packages (libcurl, libssl, libxml2 needed by Seurat/anndata)
+# System deps for R packages (libcurl, libssl, libxml2, libicu needed by Seurat/anndata)
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
+    libicu-dev \
+    libharfbuzz-dev \
+    libfribidi-dev \
     cmake \
     tzdata \
     && ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime \
