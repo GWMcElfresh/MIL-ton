@@ -9,8 +9,15 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV TZ=UTC
 
-# Install R + system deps for Seurat and anndata R packages
+# Install R from CRAN repository (system r-base on this base image is R 3.6.3,
+# which is too old for Seurat/anndata — we need R >= 4.1).
+# pytorch:2.1.0-cuda11.8 is based on Ubuntu 22.04 (jammy).
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gpg \
+    software-properties-common \
+    && echo "deb https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" > /etc/apt/sources.list.d/cran.list \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
+    && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     r-base \
     r-base-dev \
     libcurl4-openssl-dev \
@@ -42,8 +49,9 @@ RUN mkdir -p mil_ton \
 
 # Install required R packages (used by GEX_MERGE_COUNTS template)
 # Must be after Python deps (anndata R package depends on Python anndata via reticulate)
-RUN R -e 'install.packages(c("Seurat", "Matrix", "data.table"), repos = "https://cloud.r-project.org")' && \
-    R -e 'if (!requireNamespace("anndata", quietly = TRUE)) { install.packages("anndata", repos = "https://cloud.r-project.org") }'
+RUN R -e 'install.packages(c("Matrix", "data.table"), repos = "https://cloud.r-project.org")'
+RUN R -e 'install.packages("Seurat", repos = "https://cloud.r-project.org"); stopifnot(require("Seurat", character.only = TRUE))'
+RUN R -e 'install.packages("anndata", repos = "https://cloud.r-project.org"); stopifnot(require("anndata", character.only = TRUE))'
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 # Adds the actual package source on top of the dep layer.  This is the image
