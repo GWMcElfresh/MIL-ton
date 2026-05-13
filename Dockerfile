@@ -21,7 +21,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     && rig default $(rig list | awk '/^[0-9]/{print $1; exit}')
 
 # System deps for R packages (libcurl, libssl, libxml2, libicu needed by Seurat/anndata)
+# build-essential and gfortran needed to compile CRAN packages from source
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    build-essential \
+    gfortran \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
