@@ -15,7 +15,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
-    && curl -fsSL https://github.com/r-lib/rig/releases/download/latest/rig-linux-$(dpkg --print-architecture).tar.gz \
+    && curl -fsSL https://github.com/r-lib/rig/releases/download/v0.8.0/rig-linux-0.8.0.tar.gz \
     | tar xz -C /usr/local \
     && rig add 4.4 --quiet \
     && rig default 4.4
