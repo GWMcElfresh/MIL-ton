@@ -13,10 +13,13 @@ ENV TZ=UTC
 # which is too old for Seurat/anndata — we need R >= 4.1).
 # pytorch:2.1.0-cuda11.8 is based on Ubuntu 22.04 (jammy).
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    gpg \
-    software-properties-common \
-    && echo "deb https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" > /etc/apt/sources.list.d/cran.list \
-    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
+    ca-certificates \
+    curl \
+    gnupg \
+    && curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
+      | gpg --dearmor -o /usr/share/keyrings/cran-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" \
+      > /etc/apt/sources.list.d/cran.list \
     && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     r-base \
     r-base-dev \
