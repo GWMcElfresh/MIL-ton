@@ -9,20 +9,15 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV TZ=UTC
 
-# Install R from CRAN repository (system r-base on this base image is R 3.6.3,
-# which is too old for Seurat/anndata — we need R >= 4.1).
-# pytorch:2.1.0-cuda11.8 is based on Ubuntu 22.04 (jammy).
+# Install R 4.4 via rig (R Installation Manager) — avoids apt dependency hell
+# on the minimal pytorch base image. Rig bundles pre-compiled binaries.
+RUN curl -fsSL https://github.com/r-lib/rig/releases/download/latest/rig-linux-$(dpkg --print-architecture).tar.gz \
+    | tar xz -C /usr/local \
+    && rig add 4.4 --quiet \
+    && rig default 4.4
+
+# System deps for R packages (libcurl, libssl, libxml2 needed by Seurat/anndata)
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    gnupg \
-    && curl -fsSL https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
-      | gpg --dearmor -o /usr/share/keyrings/cran-archive-keyring.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/cran-archive-keyring.gpg] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran42/" \
-      > /etc/apt/sources.list.d/cran.list \
-    && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    r-base \
-    r-base-dev \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
