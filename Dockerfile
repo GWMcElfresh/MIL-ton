@@ -17,7 +17,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     && rm -rf /var/lib/apt/lists/* \
     && curl -fsSL https://github.com/r-lib/rig/releases/download/v0.8.0/rig-linux-0.8.0.tar.gz \
     | tar xz -C /usr/local \
-    && rig add 4.4 --quiet \
+    && rig add 4.4 \
     && rig default 4.4
 
 # System deps for R packages (libcurl, libssl, libxml2, libicu needed by Seurat/anndata)
