@@ -22,6 +22,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 # System deps for R packages (libcurl, libssl, libxml2, libicu needed by Seurat/anndata)
 # build-essential and gfortran needed to compile CRAN packages from source
+# libuv-dev for httpuv (shiny), pandoc for rmarkdown/htmlwidgets
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     build-essential \
     gfortran \
@@ -31,7 +32,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libicu-dev \
     libharfbuzz-dev \
     libfribidi-dev \
+    libuv-dev \
     cmake \
+    pandoc \
     tzdata \
     && ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime \
     && dpkg-reconfigure --frontend noninteractive tzdata \
@@ -58,6 +61,7 @@ RUN mkdir -p mil_ton \
 # Install required R packages (used by GEX_MERGE_COUNTS template)
 # Must be after Python deps (anndata R package depends on Python anndata via reticulate)
 RUN R -e 'install.packages(c("Matrix", "data.table"), repos = "https://cloud.r-project.org")'
+RUN R -e 'Sys.setenv(CXX17="g++"); install.packages("fs", repos = "https://cloud.r-project.org")'
 RUN R -e 'install.packages("Seurat", repos = "https://cloud.r-project.org"); stopifnot(require("Seurat", character.only = TRUE))'
 RUN R -e 'install.packages("anndata", repos = "https://cloud.r-project.org"); stopifnot(require("anndata", character.only = TRUE))'
 
